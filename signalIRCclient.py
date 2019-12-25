@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
-# You need https://github.com/AsamK/signal-cli installed and working and
-# paired up to your phone before any of this can be used.
-#
-# 1) Start signal-cli in dbus daemon mode: signal-cli -u <+phone> daemon
-# 2) Start this thing.
-# 3) Connect to localhost:60667 with an IRC client.
+# pip3 install pydbus
+# pip3 install python-magic
+# pip3 install wget
 
 import sys
 import socket
@@ -27,7 +24,7 @@ server_socket.listen(0)
 client_socket, client_address = server_socket.accept()
 server_socket.close()
 
-attachmentFileHost='signal.mccarthyinternet.net'
+attachmentFileHost='<domain here>'
 
 ircd = "signal-ircd.local"
 handshake = client_socket.recv(512).decode('utf-8')
@@ -143,9 +140,7 @@ signal.onMessageReceived = receive
 
 def transmit(channel, condition):
     attachments =[]
-    # attachments.append('https://usercontent.irccloud-cdn.com/file/UlEIs9tu/MVIMG_20191224_120755.jpg')
-    # if 
-    # wget = 
+ 
 
     message = channel.read().decode('utf-8')
     if message == '':
