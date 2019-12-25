@@ -16,6 +16,8 @@ import magic
 import os
 import shutil
 import uuid
+import wget
+import re 
 
 # For simplicity, accept just one client and set all the rest of it up after.
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -116,7 +118,8 @@ def receive(timestamp, source, group_id, message, attachments):
                 filename=filename+'.jpg'
             elif mimetype == 'image/gif':
                 filename=filename+'.gif'
-
+            elif mimetype == 'image/png':
+                filename=filename+'.png'
 
             newfilepath = '/var/www/html/signalFiles/' + filename
             shutil.copy(originalfilepath, newfilepath)
@@ -137,7 +140,9 @@ signal.onMessageReceived = receive
 
 def transmit(channel, condition):
     attachments =[]
-    attachments.append('/home/signal-cli/.local/share/signal-cli/attachments/4516535517749380006')
+    # attachments.append('https://usercontent.irccloud-cdn.com/file/UlEIs9tu/MVIMG_20191224_120755.jpg')
+    # if 
+    # wget = 
 
     message = channel.read().decode('utf-8')
     if message == '':
@@ -146,6 +151,19 @@ def transmit(channel, condition):
     assert lines[-1] == '' and len(lines) == 2,\
         f"If this fails we need more complex line handling: {lines}"
     message = lines[0]
+
+
+    if "https://usercontent.irccloud-cdn.com/file/" in message:
+        print ("IRC IMAGE FOUND")
+        # ircString = message.find("https://usercontent.irccloud-cdn.com/file/")
+        url = re.search("(?P<url>https?://usercontent.irccloud-cdn.com/file/[^\s]+)", message).group("url")
+        message=message.replace(url,'')
+        imagepath = wget.download(url)
+        imagepath = '/home/signal-bridger/source/signalIRCbridge/'+imagepath
+        attachments.append(imagepath)
+        # os.remove(url)
+
+
     if message.startswith('PING '):
         challenge = message.split()[1]
         irc('PONG', challenge)
@@ -165,6 +183,9 @@ def transmit(channel, condition):
             tonumber = signal_nick_map.get(recipient, recipient)
             signal.sendMessage(signal_message, attachments, [tonumber])
             print(f"Sent to {tonumber}: {signal_message}")
+
+        if attachments:
+            os.remove(imagepath)
     else:
         irc('421', 'Unknown command')
         print(f"Unhandled IRC protocol message: {message}")
