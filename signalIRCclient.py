@@ -12,6 +12,10 @@ import socket
 from gi.repository import GLib
 from pydbus import SystemBus
 import base64
+import magic
+import os
+import shutil
+import uuid
 
 # For simplicity, accept just one client and set all the rest of it up after.
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,10 +59,24 @@ def receive(timestamp, source, group_id, message, attachments):
     print(signal.getGroupName(group_id))
 
     sendingUserName = signal.getContactName(source)
+
     if sendingUserName:
         fromnick = sendingUserName.replace(' ', '_').replace(':', '')
         if not fromnick in signal_nick_map:
             signal_nick_map[fromnick] = source
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     if group_id:
@@ -69,17 +87,58 @@ def receive(timestamp, source, group_id, message, attachments):
         if not groupName in signal_nick_map:
             signal_nick_map[groupName] = group_id
         message = fromnick +"- "+message
-        ircmsg(groupName, message)
+        senderName=groupName
     elif fromnick:
-        ircmsg(fromnick, message)
+        senderName=fromnick
     else:
-        ircmsg(source, message)
+        senderName=source
+
+    ircmsg(senderName,message)
+
+
+    if attachments:
+        print("attachments are present")
+        for a in attachments:
+            #use file command to determine file type
+            #https://stackoverflow.com/questions/10937350/how-to-check-type-of-files-without-extensions-in-python
+            print(a)
+
+            originalfilepath = a
+            filename = a.split('signal-cli/attachments/')[1]
+
+
+            print(magic.from_file(originalfilepath, mime=True))
+            mimetype = magic.from_file(originalfilepath, mime=True)
+
+            filename=str(uuid.uuid1())
+
+            if mimetype == 'image/jpeg':
+                filename=filename+'.jpg'
+            elif mimetype == 'image/gif':
+                filename=filename+'.gif'
+
+
+            newfilepath = '/var/www/html/signalFiles/' + filename
+            shutil.copy(originalfilepath, newfilepath)
+            link = "http://45.79.164.25/signalFiles/"+filename
+            print(link)
+            ircmsg(senderName,link)
+            #shutil.move('/Users/billy/d1/xfile.txt', '/Users/billy/d2/xfile.txt')
+
+
+
+
+
+
 
     return True
 
 signal.onMessageReceived = receive
 
 def transmit(channel, condition):
+    attachments =[]
+    attachments.append('/home/signal-cli/.local/share/signal-cli/attachments/4516535517749380006')
+
     message = channel.read().decode('utf-8')
     if message == '':
         sys.exit("EOF from client, exiting")
@@ -100,11 +159,11 @@ def transmit(channel, condition):
             if None:
                 ircmsg(recipient,"FAILED TO FIND GROUP ID")
             else:
-                signal.sendGroupMessage(signal_message,[],toGroupID)
+                signal.sendGroupMessage(signal_message,attachments,toGroupID)
                 print(f"Sent to GROUP {signal_message}")
         else:
             tonumber = signal_nick_map.get(recipient, recipient)
-            signal.sendMessage(signal_message, [], [tonumber])
+            signal.sendMessage(signal_message, attachments, [tonumber])
             print(f"Sent to {tonumber}: {signal_message}")
     else:
         irc('421', 'Unknown command')
