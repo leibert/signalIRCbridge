@@ -27,6 +27,8 @@ server_socket.listen(0)
 client_socket, client_address = server_socket.accept()
 server_socket.close()
 
+attachmentFileHost='signal.mccarthyinternet.net'
+
 ircd = "signal-ircd.local"
 handshake = client_socket.recv(512).decode('utf-8')
 while not 'NICK ' in handshake:
@@ -123,7 +125,8 @@ def receive(timestamp, source, group_id, message, attachments):
 
             newfilepath = '/var/www/html/signalFiles/' + filename
             shutil.copy(originalfilepath, newfilepath)
-            link = "http://45.79.164.25/signalFiles/"+filename
+            link = attachmentFileHost+"/signalFiles/"+filename
+
             print(link)
             ircmsg(senderName,link)
             #shutil.move('/Users/billy/d1/xfile.txt', '/Users/billy/d2/xfile.txt')
