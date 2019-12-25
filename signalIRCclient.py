@@ -15,16 +15,16 @@ import shutil
 import uuid
 import wget
 import re 
+import conf
 
 # For simplicity, accept just one client and set all the rest of it up after.
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server_socket.bind(('0.0.0.0', 60667))
+server_socket.bind(('0.0.0.0', conf.IRC_Port))
 server_socket.listen(0)
 client_socket, client_address = server_socket.accept()
 server_socket.close()
 
-attachmentFileHost='<domain here>'
 
 ircd = "signal-ircd.local"
 handshake = client_socket.recv(512).decode('utf-8')
@@ -119,14 +119,15 @@ def receive(timestamp, source, group_id, message, attachments):
                 filename=filename+'.gif'
             elif mimetype == 'image/png':
                 filename=filename+'.png'
+            elif mimetype == 'video/mp4':
+                filename=filename+'.mp4'
 
             newfilepath = '/var/www/html/signalFiles/' + filename
             shutil.copy(originalfilepath, newfilepath)
-            link = attachmentFileHost+"/signalFiles/"+filename
+            link = conf.AttachmentStore_Hostname+conf.AttachmentStore_Path+filename
 
             print(link)
             ircmsg(senderName,link)
-            #shutil.move('/Users/billy/d1/xfile.txt', '/Users/billy/d2/xfile.txt')
 
 
 
@@ -140,7 +141,7 @@ signal.onMessageReceived = receive
 
 def transmit(channel, condition):
     attachments =[]
- 
+
 
     message = channel.read().decode('utf-8')
     if message == '':
@@ -151,7 +152,7 @@ def transmit(channel, condition):
     message = lines[0]
 
 
-    if "https://usercontent.irccloud-cdn.com/file/" in message:
+    if conf.enableIRCCloudUploadHandling and "https://usercontent.irccloud-cdn.com/file/" in message:
         print ("IRC IMAGE FOUND")
         # ircString = message.find("https://usercontent.irccloud-cdn.com/file/")
         url = re.search("(?P<url>https?://usercontent.irccloud-cdn.com/file/[^\s]+)", message).group("url")
