@@ -65,10 +65,8 @@ def receive(timestamp, source, group_id, message, attachments):
         fromnick = sendingUserName.replace(' ', '_').replace(':', '')
         if not fromnick in signal_nick_map:
             signal_nick_map[fromnick] = source
-
-
-
-
+    else:
+        fromnick=source
 
 
 
