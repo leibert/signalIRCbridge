@@ -1,4 +1,4 @@
-# signalIRCbridge
+# signal to IRC bridge
 Bridge between Signal and IRC'
 
 based on https://wtf.hijacked.us/wiki/index.php/Signal-IRC_bridge
