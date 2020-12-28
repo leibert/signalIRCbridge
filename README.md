@@ -22,7 +22,7 @@ connect your irc client to port 60667 wherever this is being run. If you're runn
 
 
 
-
+****Notes to update
 
 
 https://pygobject.readthedocs.io/en/latest/getting_started.html#ubuntu-getting-started
@@ -38,4 +38,6 @@ https://pygobject.readthedocs.io/en/latest/getting_started.html#ubuntu-getting-s
 
 pip install vext.gi
 
+
+sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 
