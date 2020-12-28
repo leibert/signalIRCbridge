@@ -34,3 +34,8 @@ https://pygobject.readthedocs.io/en/latest/getting_started.html#ubuntu-getting-s
    35  sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0
    36  pip3 install pycairo
    37  pip3 install PyGObject
+   pip install vext
+
+pip install vext.gi
+
+
