@@ -21,34 +21,67 @@ import wget
 import re
 import conf
 import pickle
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
+import time
 
 
 
-cert_location='/etc/letsencrypt/live/signal.mccarthyinternet.net/cert.pem'
-key_location='/etc/letsencrypt/live/signal.mccarthyinternet.net/privkey.pem'
 
 # For simplicity, accept just one client and set all the rest of it up after.
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket = ssl.wrap_socket(server_socket, server_side=True, certfile=cert_location, keyfile=key_location)
+server_socket = ssl.wrap_socket(server_socket, server_side=True, certfile=conf.cert_location, keyfile=conf.key_location)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server_socket.bind(('0.0.0.0', 9999))
+server_socket.bind(('0.0.0.0', conf.IRC_Port))
 server_socket.listen(0)
 client_socket, client_address = server_socket.accept()
 server_socket.close()
 
 ircd = "signal-ircd.local"
-handshake = client_socket.recv(512).decode('utf-8')
-while not 'NICK ' in handshake:
-    # We don't care about USER.
-    handshake = client_socket.recv(512).decode('utf-8')
-nickname = handshake[handshake.index('NICK ')+5:].split('\r\n')[0]
+
+correctPW=False
+recvdNick=False
+nickname = ''
+
+
 
 def irc(action, message):
     to_b = f':{ircd} {action} {nickname} :{message}\r\n'
     client_socket.send(to_b.encode('utf-8'))
 
-irc('001', 'Signal-IRC bridge ready. IF THIS CONNECTION DROPS ALL YOUR MESSAGES COULD BELONG TO THE WORLD')
+
+#keep looking at input until connection can be established
+while (not correctPW or not recvdNick):
+    #keep looking for next message
+    handshake = client_socket.recv(512).decode('utf-8') 
+    
+    #check for password
+    if handshake.startswith('PASS '):
+        #check if password matches conf file
+        if handshake[handshake.index('PASS ')+5:].split('\r\n')[0] == conf.Server_password:
+            correctPW=True
+        #send failed pw message
+        else:
+            irc('464','Wrong password')
+            #capture connection to rate limit password checking
+            time.sleep(25)
+            os.execv(sys.argv[0], sys.argv)
+
+    
+    #nick being sent
+    elif handshake.startswith('NICK '):
+        #grab nick
+        nickname = handshake[handshake.index('NICK ')+5:].split('\r\n')[0]
+        recvdNick=True
+    
+    #if we hit user, it's probably too late, fail connection
+    elif handshake.startswith('USER '):
+        irc('464','Wrong password')
+        time.sleep(25)
+        os.execv(sys.argv[0], sys.argv)
+
+
+
+
+irc('001','SIGNAL / IRC BRIDGE STARTED')
 irc('251', 'There are 1 users and 0 invisible on 1 servers')
 irc('255', 'I have 1 clients and 1 servers')
 
@@ -163,7 +196,10 @@ def transmit(channel, condition):
 
     message = channel.read().decode('utf-8')
     if message == '':
-        sys.exit("EOF from client, exiting")
+        print("EOF from client, reset for new connection")
+        os.execv(sys.argv[0], sys.argv)
+
+        # sys.exit("EOF from client, exiting")
     lines = message.split('\r\n')
 
     message = lines[0]
