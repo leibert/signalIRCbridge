@@ -145,8 +145,11 @@ def receive(timestamp, source, group_id, message, attachments, **kwargs):
         senderName = fromnick
     else:
         senderName = source
+    try:
+        ircmsg(senderName, message)
+    except:
+        print("error in recieve():", sys.exc_info()[0])
 
-    ircmsg(senderName, message)
 
     if attachments:
         print("attachments are present")
