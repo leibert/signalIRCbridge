@@ -44,3 +44,6 @@ sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite
 
 # for stickers
 https://pypi.org/project/signalstickers-client/
+
+
+#need to install nginx and drop a folder at /signalFiles for image hosting
