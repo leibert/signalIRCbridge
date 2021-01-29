@@ -91,7 +91,10 @@ irc('255', 'I have 1 clients and 1 servers')
 def ircmsg(source, message):
     for m in message.split('\r\n'):
         to_b = f':{source}!signal@{ircd} PRIVMSG {nickname} :{m}\r\n'
-        client_socket.send(to_b.encode('utf-8'))
+        try:
+            client_socket.send(to_b.encode('utf-8'))
+        except Exception as e:
+            print(e)
 
 
 try:
