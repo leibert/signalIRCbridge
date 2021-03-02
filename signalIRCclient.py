@@ -116,82 +116,85 @@ signal = bus.get('org.asamk.Signal')
 
 
 def receive(timestamp, source, group_id, message, attachments, **kwargs):
-
-    print(f"Message from {source}: {message}")
-    # print(f"groups from {base64.decode(group_id)}:")
-    print(signal.getGroupName(group_id))
-
-    # set a flag to see if the nickmap is updated by a new message
-    nickMapUpdated = False
-
-    sendingUserName = signal.getContactName(source)
-
-    if sendingUserName:
-        fromnick = sendingUserName.replace(' ', '_').replace(':', '')
-        if not fromnick in signal_nick_map:
-            signal_nick_map[fromnick] = source
-            nickMapUpdated = True
-    else:
-        fromnick = source
-
-    if group_id:
-        print("message came from group")
-        print(f"groups from {group_id}:")
-        groupName = signal.getGroupName(group_id)
-        groupName = 'GRP_' + groupName.replace(' ', '_').replace(':', '')
-        if not groupName in signal_nick_map:
-            signal_nick_map[groupName] = group_id
-            nickMapUpdated = True
-        message = fromnick + "- " + message
-        senderName = groupName
-    elif fromnick:
-        senderName = fromnick
-    else:
-        senderName = source
     try:
-        ircmsg(senderName, message)
-    except:
-        print("error in recieve():", sys.exc_info()[0])
+        print(f"Message from {source}: {message}")
+        # print(f"groups from {base64.decode(group_id)}:")
+        print(signal.getGroupName(group_id))
+
+        # set a flag to see if the nickmap is updated by a new message
+        nickMapUpdated = False
+
+        sendingUserName = signal.getContactName(source)
+
+        if sendingUserName:
+            fromnick = sendingUserName.replace(' ', '_').replace(':', '')
+            if not fromnick in signal_nick_map:
+                signal_nick_map[fromnick] = source
+                nickMapUpdated = True
+        else:
+            fromnick = source
+
+        if group_id:
+            print("message came from group")
+            print(f"groups from {group_id}:")
+            groupName = signal.getGroupName(group_id)
+            groupName = 'GRP_' + groupName.replace(' ', '_').replace(':', '')
+            if not groupName in signal_nick_map:
+                signal_nick_map[groupName] = group_id
+                nickMapUpdated = True
+            message = fromnick + "- " + message
+            senderName = groupName
+        elif fromnick:
+            senderName = fromnick
+        else:
+            senderName = source
+        try:
+            ircmsg(senderName, message)
+        except:
+            print("error in recieve():", sys.exc_info()[0])
 
 
-    if attachments:
-        print("attachments are present")
-        for a in attachments:
-            # use file command to determine file type
-            # https://stackoverflow.com/questions/10937350/how-to-check-type-of-files-without-extensions-in-python
-            print(a)
+        if attachments:
+            print("attachments are present")
+            for a in attachments:
+                # use file command to determine file type
+                # https://stackoverflow.com/questions/10937350/how-to-check-type-of-files-without-extensions-in-python
+                print(a)
 
-            originalfilepath = a
-            filename = a.split('signal-cli/attachments/')[1]
+                originalfilepath = a
+                filename = a.split('signal-cli/attachments/')[1]
 
-            print(magic.from_file(originalfilepath, mime=True))
-            mimetype = magic.from_file(originalfilepath, mime=True)
+                print(magic.from_file(originalfilepath, mime=True))
+                mimetype = magic.from_file(originalfilepath, mime=True)
 
-            filename = str(uuid.uuid1())
+                filename = str(uuid.uuid1())
 
-            if mimetype == 'image/jpeg':
-                filename = filename + '.jpg'
-            elif mimetype == 'image/gif':
-                filename = filename + '.gif'
-            elif mimetype == 'image/png':
-                filename = filename + '.png'
-            elif mimetype == 'video/mp4':
-                filename = filename + '.mp4'
+                if mimetype == 'image/jpeg':
+                    filename = filename + '.jpg'
+                elif mimetype == 'image/gif':
+                    filename = filename + '.gif'
+                elif mimetype == 'image/png':
+                    filename = filename + '.png'
+                elif mimetype == 'video/mp4':
+                    filename = filename + '.mp4'
 
-            newfilepath = '/var/www/html/signalFiles/' + filename
-            shutil.copy(originalfilepath, newfilepath)
-            link = conf.AttachmentStore_Hostname + conf.AttachmentStore_Path + filename
+                newfilepath = '/var/www/html/signalFiles/' + filename
+                shutil.copy(originalfilepath, newfilepath)
+                link = conf.AttachmentStore_Hostname + conf.AttachmentStore_Path + filename
 
-            print(link)
-            ircmsg(senderName, link)
+                print(link)
+                ircmsg(senderName, link)
 
-    # handle nick map updates
-    if nickMapUpdated:
+        # handle nick map updates
+        if nickMapUpdated:
 
-        with open('nickPickle.dat', 'wb+') as filehandler:
-            pickle.dump(signal_nick_map, filehandler)
+            with open('nickPickle.dat', 'wb+') as filehandler:
+                pickle.dump(signal_nick_map, filehandler)
 
-    return True
+        return True
+    except Exception as e:
+        print (e.message, e.args)
+        return False
 
 
 signal.onMessageReceived = receive
